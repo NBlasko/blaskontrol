@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Node 18",
+  "compilerOptions": {
+    "lib": ["es2022"],
+    "module": "commonjs",
+    "target": "es2022",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "outDir": "build",
+    "types": ["jest", "node"],
+    "resolveJsonModule": true,
+    "strictPropertyInitialization": false,
+    "baseUrl": "."
+  },
+  "include": ["src/**/*.ts", "jest/*.ts"],
+  "exclude": ["node_modules"]
+}
