@@ -23,6 +23,10 @@ describe('Request scope', () => {
     constructor(private readonly testRepository: TestRepository, private readonly testContext: TestContext) {}
     public getTestData() {
       const myNumberFromContext = this.testContext.myTestData[0];
+
+      if (!myNumberFromContext) {
+        throw new Error('Missing myNumberFromContext');
+      }
       const dataFromRepository = this.testRepository.getAll();
       dataFromRepository.push(myNumberFromContext);
       return dataFromRepository;

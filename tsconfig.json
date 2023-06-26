@@ -14,12 +14,13 @@
     "sourceMap": true,
     "strictNullChecks": true,
     "noImplicitAny": true,
-    "outDir": "build",
     "types": ["jest", "node"],
     "resolveJsonModule": true,
     "strictPropertyInitialization": false,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true
   },
-  "include": ["src/**/*.ts", "jest/*.ts"],
+  "include": ["src/**/*.ts", "jest/*.ts", "dist/**/*.ts"],
   "exclude": ["node_modules"]
 }

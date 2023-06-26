@@ -88,9 +88,10 @@ export class Container {
   }
 
   public mock<T>(fn: T, mockedHandler: unknown): this {
-    const { id, name } = (fn as MetaMutation<T>)[this.metaIoC];
+    const metaData = (fn as MetaMutation<T>)[this.metaIoC];
 
-    if (!id) throw new Error('Missing injected value');
+    if (!metaData) throw new Error('Missing injected value');
+    const { id, name } = metaData;
 
     const isRegistered = this.dependencies.has(id) || this.factories.has(id) || this.singletonInstances.has(id);
     if (!isRegistered) throw new Error(`Missing module with and class name ${name}`);
