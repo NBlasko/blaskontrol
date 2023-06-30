@@ -132,4 +132,20 @@ describe('Bindings', () => {
 
     expect(registerDynamicTwoTimesOnChild).not.toThrow();
   });
+
+  it('should bind and get an anonymous function - not an officially supported feature', () => {
+    const container = new Container();
+    const anonymousFunction = () => 'Hello';
+    container.bindAsConstant((() => 'Hello' as unknown) as any, anonymousFunction);
+    const anonymousFunctionFromContainer: any = container.get(anonymousFunction as any);
+    expect(anonymousFunctionFromContainer()).toBe('Hello');
+  });
+
+  it('should bind and get an object - not an officially supported feature', () => {
+    const container = new Container();
+    const obj = { myKey: 'Hello' };
+    container.bindAsConstant(obj as any, obj);
+    const anonymousFunctionFromContainer: any = container.get(obj as any);
+    expect(anonymousFunctionFromContainer.myKey).toBe('Hello');
+  });
 });

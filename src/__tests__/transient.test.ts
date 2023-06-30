@@ -33,7 +33,7 @@ describe('Transient scope', () => {
     expect(secondFoo2.myState).toBe('Initial value in FirstFoo');
   });
 
-  it('should get transient in the child container bonded in the parent container', () => {
+  it('should get transient in the child container bounded in the parent container', () => {
     const container = new Container();
     container.bindAsDynamic(FirstFoo, () => new FirstFoo(), { scope: 'transient' });
     const childContainer = container.createChild();

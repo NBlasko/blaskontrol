@@ -13,7 +13,7 @@ describe('Get Instance', () => {
     }
   }
 
-  it('fails to get an instance from the parent container when it is bonded in the child container', () => {
+  it('fails to get an instance from the parent container if it is bound in the child container', () => {
     const container = new Container();
 
     container.bindAsConstant(Foo, new Foo());
@@ -22,5 +22,10 @@ describe('Get Instance', () => {
     const bar = childContainer.get(Bar);
     expect(bar.getFooFromDependency()).toBe('foo');
     expect(() => container.get(Bar)).toThrow('Missing module with class name Bar');
+  });
+
+  it('fails to get an instance from the parent container before registering it', () => {
+    const container = new Container();
+    expect(() => container.get(Foo)).toThrow('Missing injected value');
   });
 });

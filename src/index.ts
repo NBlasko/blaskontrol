@@ -11,14 +11,23 @@ interface IFactory {
   handler: (that: Container) => unknown;
 }
 
+type PublicScope = 'singleton' | 'request' | 'transient';
+
 interface ClassMetadata {
-  scope: 'singleton' | 'request' | 'transient';
+  scope: PublicScope | 'mock';
   id: string;
   name: string;
 }
 
 interface BindDynamicOptions {
-  scope: ClassMetadata['scope'];
+  scope: PublicScope;
+}
+
+interface SnapshotBackup {
+  dependencies: null | Map<string, unknown>;
+  factories: null | Map<string, IFactory>;
+  singletonInstances: null | Map<string, unknown>;
+  isInTestingState: boolean;
 }
 
 export class Container {
@@ -30,9 +39,38 @@ export class Container {
   private id = 0;
   private isChild = false;
   private debug: ContainerOptions['debug'] = () => null;
+  private snapshotBackup: SnapshotBackup = {
+    dependencies: null,
+    factories: null,
+    singletonInstances: null,
+    isInTestingState: false,
+  };
 
   constructor(readonly options?: ContainerOptions) {
     if (options?.debug) this.debug = options.debug;
+  }
+
+  snapshot() {
+    this.snapshotBackup = {
+      dependencies: this.dependencies,
+      factories: this.factories,
+      singletonInstances: this.singletonInstances,
+      isInTestingState: true,
+    };
+    this.dependencies = new Map();
+    this.factories = new Map(this.factories);
+    this.singletonInstances = new Map(this.singletonInstances);
+  }
+
+  public restore() {
+    if (this.isChild) {
+      throw new Error("Not available to restore to defaults by calling the method 'restore' from the child container");
+    }
+    this.mockedDependencies.clear();
+    this.dependencies = this.snapshotBackup.dependencies ?? new Map<string, unknown>();
+    this.singletonInstances = this.snapshotBackup.singletonInstances ?? new Map<string, unknown>();
+    this.factories = this.snapshotBackup.factories ?? new Map<string, IFactory>();
+    this.snapshotBackup = { dependencies: null, factories: null, singletonInstances: null, isInTestingState: false };
   }
 
   public createChild() {
@@ -87,22 +125,28 @@ export class Container {
     return this;
   }
 
-  public mock<T>(fn: T, mockedHandler: unknown): this {
-    const metaData = (fn as MetaMutation<T>)[this.metaIoC];
+  private getOrAddMockMetadata<T extends AbstractInstance>(clazz: T): ClassMetadata {
+    const foundMetaData = (clazz as MetaMutation<T>)[this.metaIoC];
+    if (foundMetaData) return foundMetaData;
 
-    if (!metaData) throw new Error('Missing injected value');
-    const { id, name } = metaData;
+    const metaData = this.generateMetadata('mock', clazz.name);
+    this.appendMetadataToClass(clazz, metaData);
+    return metaData;
+  }
 
-    const isRegistered = this.dependencies.has(id) || this.factories.has(id) || this.singletonInstances.has(id);
-    if (!isRegistered) throw new Error(`Missing module with and class name ${name}`);
+  public mock<T extends AbstractInstance>(clazz: T, mockedHandler: unknown): this {
+    if (!this.snapshotBackup.isInTestingState) {
+      throw new Error("Must execute method 'snapshot()' before using mock");
+    }
 
-    this.reset();
-    this.mockedDependencies.set(id, mockedHandler);
+    const metaData = this.getOrAddMockMetadata(clazz);
+
+    this.mockedDependencies.set(metaData.id, mockedHandler);
     return this;
   }
 
-  public get<T>(fn: Newable<T> & { name?: string }): T {
-    const metaData = (fn as MetaMutation<Newable<T>>)?.[this.metaIoC];
+  public get<T>(clazz: Newable<T>): T {
+    const metaData = (clazz as MetaMutation<Newable<T>>)?.[this.metaIoC];
     if (!metaData) {
       throw new Error('Missing injected value');
     }
@@ -127,18 +171,6 @@ export class Container {
     }
 
     throw new Error(`Missing module with class name ${name}`);
-  }
-
-  public reset() {
-    this.dependencies.clear();
-  }
-
-  public restore() {
-    if (this.isChild) {
-      throw new Error("Not available to restore to defaults by calling the method 'restore' from the child container");
-    }
-    this.mockedDependencies.clear();
-    this.reset();
   }
 
   private resolveFactory<T>(parentFactory: IFactory, meta: ClassMetadata) {
