@@ -1,39 +1,25 @@
-type Newable<T> = new (...args: never[]) => T;
-type AbstractInstance = abstract new (...args: never[]) => unknown;
-type MetaMutation<T = AbstractInstance> = T & Record<symbol, ClassMetadata>;
+import {
+  AbstractInstance,
+  BindDynamicOptions,
+  ContainerInterface,
+  ContainerOptions,
+  Factory,
+  MetaMutation,
+  Newable,
+  ServiceMetadata,
+  SnapshotBackup,
+} from './types';
 
-interface ContainerOptions {
-  debug: (message: string) => void;
-}
+export const Scope = {
+  singleton: 'singleton',
+  request: 'request',
+  transient: 'transient',
+} as const;
 
-interface IFactory {
-  dynamicClass: AbstractInstance;
-  handler: (that: Container) => unknown;
-}
-
-type PublicScope = 'singleton' | 'request' | 'transient';
-
-interface ClassMetadata {
-  scope: PublicScope | 'mock';
-  id: string;
-  name: string;
-}
-
-interface BindDynamicOptions {
-  scope: PublicScope;
-}
-
-interface SnapshotBackup {
-  dependencies: null | Map<string, unknown>;
-  factories: null | Map<string, IFactory>;
-  singletonInstances: null | Map<string, unknown>;
-  isInTestingState: boolean;
-}
-
-export class Container {
+export class Container implements ContainerInterface {
   private metaIoC = Symbol('metaIoC');
   private dependencies = new Map<string, unknown>();
-  private factories = new Map<string, IFactory>();
+  private factories = new Map<string, Factory>();
   private singletonInstances = new Map<string, unknown>();
   private mockedDependencies = new Map<string, unknown>();
   private id = 0;
@@ -50,30 +36,30 @@ export class Container {
     if (options?.debug) this.debug = options.debug;
   }
 
-  snapshot() {
+  public snapshot(): void {
     this.snapshotBackup = {
       dependencies: this.dependencies,
       factories: this.factories,
       singletonInstances: this.singletonInstances,
       isInTestingState: true,
     };
-    this.dependencies = new Map();
-    this.factories = new Map(this.factories);
-    this.singletonInstances = new Map(this.singletonInstances);
+    this.dependencies = new Map<string, unknown>();
+    this.factories = new Map<string, Factory>(this.factories);
+    this.singletonInstances = new Map<string, unknown>(this.singletonInstances);
   }
 
-  public restore() {
+  public restore(): void {
     if (this.isChild) {
       throw new Error("Not available to restore to defaults by calling the method 'restore' from the child container");
     }
     this.mockedDependencies.clear();
     this.dependencies = this.snapshotBackup.dependencies ?? new Map<string, unknown>();
     this.singletonInstances = this.snapshotBackup.singletonInstances ?? new Map<string, unknown>();
-    this.factories = this.snapshotBackup.factories ?? new Map<string, IFactory>();
+    this.factories = this.snapshotBackup.factories ?? new Map<string, Factory>();
     this.snapshotBackup = { dependencies: null, factories: null, singletonInstances: null, isInTestingState: false };
   }
 
-  public createChild() {
+  public createChild(): Container {
     const di = new Container();
     di.metaIoC = this.metaIoC;
     di.isChild = true;
@@ -85,68 +71,47 @@ export class Container {
     return di;
   }
 
-  /**
-   * @description Singleton - registered ahead of time, before the use
-   * @example   
-    
-    class Foo {
-        public getFoo() {
-            return 'foo';
-        }
-    }
-
-    container.bindAsConstant(Foo, new Foo());
-   */
-  public bindAsConstant<T extends AbstractInstance>(clazz: T, clazzInstance: InstanceType<T>): this {
+  public bindAsConstant<T extends AbstractInstance>(service: T, serviceInstance: InstanceType<T>): this {
     if (this.isChild) throw new Error('Singletons must be bound in the parent container');
 
-    if ((clazz as MetaMutation<T>)[this.metaIoC]) throw new Error(`Class ${clazz?.name} is already registered`);
+    if ((service as MetaMutation<T>)[this.metaIoC]) throw new Error(`Service ${service?.name} is already registered`);
 
-    const metaData = this.generateMetadata('singleton', clazz.name);
-    (clazzInstance as MetaMutation)[this.metaIoC] = metaData;
-    this.appendMetadataToClass(clazz, metaData);
-    this.singletonInstances.set(metaData.id, clazzInstance);
-    this.dependencies.set(metaData.id, clazzInstance);
-    this.debug(`Container registers class ${metaData.name} with id ${metaData.id} as a singleton`);
+    const metaData = this.generateMetadata('singleton', service.name);
+    (serviceInstance as MetaMutation)[this.metaIoC] = metaData;
+    this.appendMetadataToService(service, metaData);
+    this.singletonInstances.set(metaData.id, serviceInstance);
+    this.dependencies.set(metaData.id, serviceInstance);
+    this.debug(`Container registers service ${metaData.name} with id ${metaData.id} as a singleton`);
     return this;
   }
 
   public bindAsDynamic<T extends AbstractInstance>(
-    clazz: T,
+    service: T,
     handler: (c: Container) => InstanceType<T>,
     options: BindDynamicOptions = { scope: 'singleton' },
   ): this {
     if (this.isChild) {
-      this.bindOnChildAsDynamic(clazz, handler, options);
+      this.bindOnChildAsDynamic(service, handler, options);
       return this;
     }
 
-    this.bindOnParentAsDynamic(clazz, handler, options);
+    this.bindOnParentAsDynamic(service, handler, options);
     return this;
   }
 
-  private getOrAddMockMetadata<T extends AbstractInstance>(clazz: T): ClassMetadata {
-    const foundMetaData = (clazz as MetaMutation<T>)[this.metaIoC];
-    if (foundMetaData) return foundMetaData;
-
-    const metaData = this.generateMetadata('mock', clazz.name);
-    this.appendMetadataToClass(clazz, metaData);
-    return metaData;
-  }
-
-  public mock<T extends AbstractInstance>(clazz: T, mockedHandler: unknown): this {
+  public mock<T extends AbstractInstance>(service: T, mockedHandler: unknown): this {
     if (!this.snapshotBackup.isInTestingState) {
       throw new Error("Must execute method 'snapshot()' before using mock");
     }
 
-    const metaData = this.getOrAddMockMetadata(clazz);
+    const metaData = this.getOrAddMockMetadata(service);
 
     this.mockedDependencies.set(metaData.id, mockedHandler);
     return this;
   }
 
-  public get<T>(clazz: Newable<T>): T {
-    const metaData = (clazz as MetaMutation<Newable<T>>)?.[this.metaIoC];
+  public get<T>(service: Newable<T>): T {
+    const metaData = (service as MetaMutation<Newable<T>>)?.[this.metaIoC];
     if (!metaData) {
       throw new Error('Missing injected value');
     }
@@ -166,35 +131,42 @@ export class Container {
     }
 
     const factory = this.factories.get(id);
-    if (factory) {
-      return this.resolveFactory<T>(factory, metaData);
-    }
+    if (factory) return this.resolveFactory<T>(factory, metaData);
 
-    throw new Error(`Missing module with class name ${name}`);
+    throw new Error(`Missing module with service name ${name}`);
   }
 
-  private resolveFactory<T>(parentFactory: IFactory, meta: ClassMetadata) {
+  private getOrAddMockMetadata<T extends AbstractInstance>(service: T): ServiceMetadata {
+    const foundMetaData = (service as MetaMutation<T>)[this.metaIoC];
+    if (foundMetaData) return foundMetaData;
+
+    const metaData = this.generateMetadata('mock', service.name);
+    this.appendMetadataToService(service, metaData);
+    return metaData;
+  }
+
+  private resolveFactory<T>(parentFactory: Factory, meta: ServiceMetadata) {
     const parentHandler = parentFactory.handler(this);
 
     if (meta.scope === 'singleton') {
       this.singletonInstances.set(meta.id, parentHandler);
       this.dependencies.set(meta.id, parentHandler);
-      this.debug(`Container resolved class ${meta.name} with id ${meta.id} as a singleton`);
+      this.debug(`Container resolved service ${meta.name} with id ${meta.id} as a singleton`);
       return parentHandler as T;
     }
 
     if (meta.scope === 'request' && this.isChild) {
       this.dependencies.set(meta.id, parentHandler);
-      this.debug(`Container resolved class ${meta.name} with id ${meta.id} as a request scoped`);
+      this.debug(`Container resolved service ${meta.name} with id ${meta.id} as a request scoped`);
       return parentHandler as T;
     }
 
-    this.debug(`Container resolved class ${meta.name} with id ${meta.id} as transient scoped`);
+    this.debug(`Container resolved service ${meta.name} with id ${meta.id} as transient scoped`);
     return parentHandler as T;
   }
 
   private bindOnChildAsDynamic<T extends AbstractInstance>(
-    clazz: T,
+    service: T,
     handler: (c: Container) => InstanceType<T>,
     options: BindDynamicOptions,
   ): void {
@@ -202,38 +174,51 @@ export class Container {
       throw new Error('Singletons must be bound in the parent container');
     }
 
-    const factory = { dynamicClass: clazz, handler };
+    const factory = { service, handler };
 
-    const metaData = (clazz as MetaMutation<T>)[this.metaIoC] ?? this.generateMetadata(options.scope, clazz.name);
-    this.appendMetadataToClass(clazz, metaData);
-    this.factories.set(metaData.id, factory);
-    this.debug(`Child container registers class ${metaData.name} with id ${metaData.id} as a ${metaData.scope} scoped`);
-  }
+    const metaData = (service as MetaMutation<T>)[this.metaIoC] ?? this.generateMetadata(options.scope, service.name);
 
-  private bindOnParentAsDynamic<T extends AbstractInstance>(
-    clazz: T,
-    handler: (c: Container) => InstanceType<T>,
-    options: BindDynamicOptions,
-  ): void {
-    const foundMeta = (clazz as MetaMutation<T>)[this.metaIoC];
-    if (foundMeta) {
-      throw new Error(`Class ${clazz?.name} is already registered`);
+    if (metaData.scope !== options.scope && metaData.scope !== 'mock') {
+      this.debug(
+        `Changing scope in child container from ${metaData.scope} to ${options.scope} will be ignored.
+        Please, update parent container with proper injection scope`,
+      );
     }
 
-    const factory = { dynamicClass: clazz, handler };
-    const metaData = this.generateMetadata(options.scope, clazz.name);
-    this.appendMetadataToClass(clazz, metaData);
+    this.appendMetadataToService(service, metaData);
     this.factories.set(metaData.id, factory);
     this.debug(
-      `Parent container registers class ${metaData.name} with id ${metaData.id} as a ${metaData.scope} scoped`,
+      `Child container registers service ${metaData.name} with id ${metaData.id} as a ${metaData.scope} scoped`,
     );
   }
 
-  private appendMetadataToClass<T extends AbstractInstance>(clazz: T, metaData: ClassMetadata): void {
-    (clazz as unknown as MetaMutation)[this.metaIoC] = metaData;
+  private bindOnParentAsDynamic<T extends AbstractInstance>(
+    service: T,
+    handler: (c: Container) => InstanceType<T>,
+    options: BindDynamicOptions,
+  ): void {
+    const foundMeta = (service as MetaMutation<T>)[this.metaIoC];
+    if (foundMeta) {
+      throw new Error(`Service ${service?.name} is already registered`);
+    }
+
+    const factory = { service, handler };
+    const metaData = this.generateMetadata(options.scope, service.name);
+    this.appendMetadataToService(service, metaData);
+    this.factories.set(metaData.id, factory);
+    this.debug(
+      `Parent container registers service ${metaData.name} with id ${metaData.id} as a ${metaData.scope} scoped`,
+    );
   }
 
-  private generateMetadata(scope: ClassMetadata['scope'], name: ClassMetadata['name'] = 'unknown'): ClassMetadata {
+  private appendMetadataToService<T extends AbstractInstance>(service: T, metaData: ServiceMetadata): void {
+    (service as unknown as MetaMutation)[this.metaIoC] = metaData;
+  }
+
+  private generateMetadata(
+    scope: ServiceMetadata['scope'],
+    name: ServiceMetadata['name'] = 'unknown',
+  ): ServiceMetadata {
     const id = `di${++this.id}`;
     return { scope, id, name };
   }

@@ -56,11 +56,11 @@ describe('Singleton scope', () => {
     expect(container.bindAsConstant(FirstFoo, new FirstFoo()) instanceof Container).toBeTruthy();
   });
 
-  it("should get a class with 'bindAsConstant' as a singleton from the parent container", () => {
+  it("should get a service with 'bindAsConstant' as a singleton from the parent container", () => {
     const debug = jest.fn();
     const container = new Container({ debug });
     container.bindAsConstant(FirstFoo, new FirstFoo());
-    expect(debug).toHaveBeenCalledWith('Container registers class FirstFoo with id di1 as a singleton');
+    expect(debug).toHaveBeenCalledWith('Container registers service FirstFoo with id di1 as a singleton');
 
     debug.mockReset();
     container.get(FirstFoo);
@@ -69,17 +69,17 @@ describe('Singleton scope', () => {
     expect(debug).not.toBeCalled();
   });
 
-  it("It should get a class with 'bindAsDynamic' as a singleton from the parent container", () => {
+  it("It should get a service with 'bindAsDynamic' as a singleton from the parent container", () => {
     const debug = jest.fn();
     const container = new Container({ debug });
     container.bindAsDynamic(FirstFoo, () => new FirstFoo());
-    expect(debug).toHaveBeenCalledWith('Parent container registers class FirstFoo with id di1 as a singleton scoped');
+    expect(debug).toHaveBeenCalledWith('Parent container registers service FirstFoo with id di1 as a singleton scoped');
 
     debug.mockReset();
 
     // Resolving singleton
     container.get(FirstFoo);
-    expect(debug).toHaveBeenCalledWith('Container resolved class FirstFoo with id di1 as a singleton');
+    expect(debug).toHaveBeenCalledWith('Container resolved service FirstFoo with id di1 as a singleton');
 
     debug.mockReset();
     container.get(FirstFoo);
@@ -88,12 +88,12 @@ describe('Singleton scope', () => {
     expect(debug).not.toHaveBeenCalled();
   });
 
-  it("It should get a class with 'bindAsConstant' as a singleton from the child container", () => {
+  it("It should get a service with 'bindAsConstant' as a singleton from the child container", () => {
     const debug = jest.fn();
     const container = new Container({ debug });
     container.bindAsConstant(FirstFoo, new FirstFoo());
     const childContainer = container.createChild();
-    expect(debug).toHaveBeenCalledWith('Container registers class FirstFoo with id di1 as a singleton');
+    expect(debug).toHaveBeenCalledWith('Container registers service FirstFoo with id di1 as a singleton');
 
     debug.mockReset();
     childContainer.get(FirstFoo);
@@ -102,18 +102,18 @@ describe('Singleton scope', () => {
     expect(debug).not.toHaveBeenCalled();
   });
 
-  it("It should get a class with 'bindAsDynamic' as a singleton from the child container", () => {
+  it("It should get a service with 'bindAsDynamic' as a singleton from the child container", () => {
     const debug = jest.fn();
     const container = new Container({ debug });
     container.bindAsDynamic(FirstFoo, () => new FirstFoo());
-    expect(debug).toHaveBeenCalledWith('Parent container registers class FirstFoo with id di1 as a singleton scoped');
+    expect(debug).toHaveBeenCalledWith('Parent container registers service FirstFoo with id di1 as a singleton scoped');
     const childContainer = container.createChild();
 
     debug.mockReset();
 
     // Resolving singleton
     childContainer.get(FirstFoo);
-    expect(debug).toHaveBeenCalledWith('Container resolved class FirstFoo with id di1 as a singleton');
+    expect(debug).toHaveBeenCalledWith('Container resolved service FirstFoo with id di1 as a singleton');
 
     debug.mockReset();
     childContainer.get(FirstFoo);
@@ -145,12 +145,12 @@ describe('Singleton scope', () => {
     expect(firstFooFromChild2.myState).toBe('New value in FirstFoo changed form childContainer1');
   });
 
-  it('should get a singleton from the factory that depends on transient classes in the parent container', () => {
+  it('should get a singleton from the factory that depends on transient services in the parent container', () => {
     const container = new Container();
     container.bindAsDynamic(FirstFoo, () => new FirstFoo(), { scope: 'transient' });
     container.bindAsDynamic(Bar, (c) => new Bar(c.get(FirstFoo)));
     const firstFoo1 = container.get(FirstFoo);
-    firstFoo1.myState = 'New state in transient class';
+    firstFoo1.myState = 'New state in transient service';
 
     // Bar is singleton, bar1 === bar2
     const bar1 = container.get(Bar);
@@ -161,7 +161,7 @@ describe('Singleton scope', () => {
     expect(bar2.readFromFirstFooState()).toBe('New state added from Bar singleton');
     expect(bar1).toBe(bar2);
 
-    // No caching => transient class
+    // No caching => transient service
     const firstFoo2 = container.get(FirstFoo);
     expect(firstFoo2.myState).toBe('Initial value in FirstFoo');
   });

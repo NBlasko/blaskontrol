@@ -128,7 +128,7 @@ describe('Mock', () => {
     expect(foo.foo()).toBe('Foo');
   });
 
-  it('should mock a class in the parent container when it is registered in the child container after mock binding', () => {
+  it('should mock a service in the parent container when it is registered in the child container after mock binding', () => {
     class Foo {
       public foo() {
         return 'Foo';

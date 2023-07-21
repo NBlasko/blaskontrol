@@ -21,7 +21,7 @@ describe('Get Instance', () => {
     childContainer.bindAsDynamic(Bar, (c) => new Bar(c.get(Foo)), { scope: 'request' });
     const bar = childContainer.get(Bar);
     expect(bar.getFooFromDependency()).toBe('foo');
-    expect(() => container.get(Bar)).toThrow('Missing module with class name Bar');
+    expect(() => container.get(Bar)).toThrow('Missing module with service name Bar');
   });
 
   it('fails to get an instance from the parent container before registering it', () => {
