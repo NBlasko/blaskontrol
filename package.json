@@ -2,16 +2,22 @@
   "name": "blaskontrol",
   "private": false,
   "license": "MIT",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NBlasko/blaskontrol.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NBlasko/blaskontrol/issues"
+  },
   "scripts": {
     "build": "tsc",
     "build:package": "tsup src/index.ts --format cjs,esm --dts",
     "watch": "tsc -w",
     "start": "node build/src/index.js",
-    "dev:js": "cross-env nodemon --config nodemon.json",
     "test": "jest --config=./jest/config.ts",
     "test:watch": "jest --watch --config=./jest/config.ts",
     "test:coverage": "jest --watchAll=false --runInBand --config=./jest/config.ts --coverage",
@@ -20,7 +26,10 @@
     "prettier": "prettier --check src",
     "prettier:fix": "prettier --write src",
     "lint:check": "npm run prettier && npm run lint",
-    "release:package": "npm run build:package && changeset publish"
+    "release:package": "npm run build:package && changeset publish",
+    "change:start": "changeset",
+    "change:version": "changeset version",
+    "change:publish": "changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.1",

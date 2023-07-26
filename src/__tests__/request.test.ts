@@ -1,5 +1,37 @@
 import { Container } from '../';
 
+class UserContext {
+  constructor(private readonly personalData: string) {}
+  public getPersonalData() {
+    return `User personal data: ${this.personalData} `;
+  }
+}
+
+class Helper {
+  public getSomething() {
+    return 'Get some helper data';
+  }
+}
+
+class ChildHelper implements Helper {
+  public getSomething() {
+    return 'Get some other data from instance registered in child container';
+  }
+}
+
+const container = new Container();
+
+// bind Helper in parent container as request-scoped
+container.bindAsDynamic(Helper, () => new Helper(), { scope: 'transient' });
+
+const childContainer = container.createChild();
+
+// bind new service with some request isolated data
+childContainer.bindAsDynamic(UserContext, () => new UserContext('My secret'), { scope: 'request' });
+
+// or rebind Helper srevice with new ChildHelper service
+childContainer.bindAsDynamic(Helper, () => new ChildHelper(), { scope: 'transient' });
+
 describe('Request scope', () => {
   class TestContext {
     myTestData: number[] = [];
@@ -64,7 +96,7 @@ describe('Request scope', () => {
     }
   }
 
-  it('should execute full request flow with Context class bound in the child container', () => {
+  it('should execute full request flow with Context service bound in the child container', () => {
     const requestScope = { scope: 'request' } as const;
     const container = new Container();
     container
@@ -92,7 +124,7 @@ describe('Request scope', () => {
     expect(controller3.getTestData(7)).toEqual([1, 2, 3, 7]);
   });
 
-  it('should execute full request flow with Context class bound in the parent container', () => {
+  it('should execute full request flow with Context service bound in the parent container', () => {
     const requestScope = { scope: 'request' } as const;
     const container = new Container();
     container
@@ -119,7 +151,7 @@ describe('Request scope', () => {
     expect(controller3.getTestData(7)).toEqual([1, 2, 3, 7]);
   });
 
-  it('should get a request scoped class in the child container', () => {
+  it('should get a request scoped service in the child container', () => {
     const container = new Container();
     container.bindAsDynamic(Foo, () => new Foo(), { scope: 'request' });
     container.bindAsDynamic(Bar, (c) => new Bar(c.get(Foo)), { scope: 'request' });

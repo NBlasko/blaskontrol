@@ -49,7 +49,7 @@ describe('Bindings', () => {
     expect(barWithSecondFoo.getFooFromDependency()).toBe('Second foo');
   });
 
-  it('It should get different instances from parent and child when we rebind class in the child container.', () => {
+  it('It should get different instances from parent and child when we rebind service in the child container.', () => {
     const container = new Container();
     container.bindAsConstant(FirstFoo, new FirstFoo());
     container.bindAsDynamic(SecondFoo, () => new SecondFoo());
@@ -66,7 +66,7 @@ describe('Bindings', () => {
     expect(barWithSecondFoo.getFooFromDependency()).toBe('Second foo');
   });
 
-  it('should chain the bindings of classes', () => {
+  it('should chain the bindings of services', () => {
     const container = new Container();
 
     container
@@ -85,8 +85,8 @@ describe('Bindings', () => {
     expect(secondFoo.getFoo()).toBe('Second foo');
   });
 
-  it('should bind the same class with independent containers without conflict', () => {
-    const bindingSameCLassToDifferentContainers = () => {
+  it('should bind the same service with independent containers without conflict', () => {
+    const bindingSameServiceToDifferentContainers = () => {
       const container1 = new Container();
       container1.bindAsConstant(FirstFoo, new FirstFoo());
 
@@ -94,10 +94,10 @@ describe('Bindings', () => {
       container2.bindAsConstant(FirstFoo, new FirstFoo());
     };
 
-    expect(bindingSameCLassToDifferentContainers).not.toThrow();
+    expect(bindingSameServiceToDifferentContainers).not.toThrow();
   });
 
-  it('should fail with bindAsConstant/Dynamic called two times on the same class on the parent container', () => {
+  it('should fail with bindAsConstant/Dynamic called two times on the same service on the parent container', () => {
     const container = new Container();
 
     const bindAsConstantTwoTimesOnParent = () => {
@@ -115,13 +115,13 @@ describe('Bindings', () => {
       container.bindAsDynamic(FirstFoo, () => new FirstFoo());
     };
 
-    const errorMessage = 'Class FirstFoo is already registered';
+    const errorMessage = 'Service FirstFoo is already registered';
     expect(bindAsConstantTwoTimesOnParent).toThrow(errorMessage);
     expect(bindAsDynamicTwoTimesOnParent).toThrow(errorMessage);
     expect(bindTwoTimesOnParent).toThrow(errorMessage);
   });
 
-  it("should work with 'bindAsDynamic' called two times on the same class on the child container as 'request' and 'transient' scoped", () => {
+  it("should work with 'bindAsDynamic' called two times on the same service on the child container as 'request' and 'transient' scoped", () => {
     const container = new Container();
     const childContainer = container.createChild();
 
