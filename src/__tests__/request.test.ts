@@ -13,12 +13,11 @@ class Helper {
   }
 }
 
-class ChildHelper implements Helper{
+class ChildHelper implements Helper {
   public getSomething() {
     return 'Get some other data from instance registered in child container';
   }
 }
-
 
 const container = new Container();
 
@@ -32,7 +31,6 @@ childContainer.bindAsDynamic(UserContext, () => new UserContext('My secret'), { 
 
 // or rebind Helper srevice with new ChildHelper service
 childContainer.bindAsDynamic(Helper, () => new ChildHelper(), { scope: 'transient' });
-
 
 describe('Request scope', () => {
   class TestContext {

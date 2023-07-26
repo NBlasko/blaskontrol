@@ -1,7 +1,7 @@
-import {
+import type {
   AbstractInstance,
   BindDynamicOptions,
-  ContainerInterface,
+  IContainer,
   ContainerOptions,
   Factory,
   MetaMutation,
@@ -16,16 +16,16 @@ export const Scope = {
   transient: 'transient',
 } as const;
 
-export class Container implements ContainerInterface {
+export class Container implements IContainer {
   private metaIoC = Symbol('metaIoC');
   private dependencies = new Map<string, unknown>();
-  private factories = new Map<string, Factory>();
+  private factories = new Map<string, Factory<Container>>();
   private singletonInstances = new Map<string, unknown>();
   private mockedDependencies = new Map<string, unknown>();
   private id = 0;
   private isChild = false;
   private debug: ContainerOptions['debug'] = () => null;
-  private snapshotBackup: SnapshotBackup = {
+  private snapshotBackup: SnapshotBackup<Container> = {
     dependencies: null,
     factories: null,
     singletonInstances: null,
@@ -44,7 +44,7 @@ export class Container implements ContainerInterface {
       isInTestingState: true,
     };
     this.dependencies = new Map<string, unknown>();
-    this.factories = new Map<string, Factory>(this.factories);
+    this.factories = new Map<string, Factory<Container>>(this.factories);
     this.singletonInstances = new Map<string, unknown>(this.singletonInstances);
   }
 
@@ -55,7 +55,7 @@ export class Container implements ContainerInterface {
     this.mockedDependencies.clear();
     this.dependencies = this.snapshotBackup.dependencies ?? new Map<string, unknown>();
     this.singletonInstances = this.snapshotBackup.singletonInstances ?? new Map<string, unknown>();
-    this.factories = this.snapshotBackup.factories ?? new Map<string, Factory>();
+    this.factories = this.snapshotBackup.factories ?? new Map<string, Factory<Container>>();
     this.snapshotBackup = { dependencies: null, factories: null, singletonInstances: null, isInTestingState: false };
   }
 
@@ -145,7 +145,7 @@ export class Container implements ContainerInterface {
     return metaData;
   }
 
-  private resolveFactory<T>(parentFactory: Factory, meta: ServiceMetadata) {
+  private resolveFactory<T>(parentFactory: Factory<Container>, meta: ServiceMetadata) {
     const parentHandler = parentFactory.handler(this);
 
     if (meta.scope === 'singleton') {
