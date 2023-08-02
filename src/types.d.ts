@@ -52,12 +52,19 @@ export interface BindDynamicOptions {
   scope: PublicScope;
 }
 
-export interface SnapshotBackup<T> {
-  dependencies: null | Map<string, unknown>;
-  factories: null | Map<string, Factory<T>>;
-  singletonInstances: null | Map<string, unknown>;
-  isInTestingState: boolean;
-}
+export type SnapshotBackup<T> =
+  | {
+      dependencies: null;
+      factories: null;
+      singletonInstances: null;
+      isInTestingState: false;
+    }
+  | {
+      dependencies: Map<string, unknown>;
+      factories: Map<string, Factory<T>>;
+      singletonInstances: Map<string, unknown>;
+      isInTestingState: true;
+    };
 
 /**
  * Interface representing a Dependency Injection Container.

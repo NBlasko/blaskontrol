@@ -136,7 +136,9 @@ describe('Bindings', () => {
   it('should bind and get an anonymous function - not an officially supported feature', () => {
     const container = new Container();
     const anonymousFunction = () => 'Hello';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     container.bindAsConstant((() => 'Hello' as unknown) as any, anonymousFunction);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const anonymousFunctionFromContainer: any = container.get(anonymousFunction as any);
     expect(anonymousFunctionFromContainer()).toBe('Hello');
   });
@@ -144,7 +146,9 @@ describe('Bindings', () => {
   it('should bind and get an object - not an officially supported feature', () => {
     const container = new Container();
     const obj = { myKey: 'Hello' };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     container.bindAsConstant(obj as any, obj);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const anonymousFunctionFromContainer: any = container.get(obj as any);
     expect(anonymousFunctionFromContainer.myKey).toBe('Hello');
   });

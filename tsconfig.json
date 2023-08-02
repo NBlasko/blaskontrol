@@ -21,6 +21,6 @@
     "noUncheckedIndexedAccess": true,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "jest/*.ts", "dist/**/*.ts"],
+  "include": ["src/**/*.ts", "jest/*.ts", "lib/**/*.ts"],
   "exclude": ["node_modules"]
 }
