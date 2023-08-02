@@ -1,6 +1,6 @@
 # blaskontrol
 
-[![Coveralls](https://img.shields.io/coveralls/NBlasko/blaskontrol.svg?maxAge=1000)](https://coveralls.io/github/NBlasko/blaskontrol)
+![Coveralls branch](https://img.shields.io/coverallsCoverage/github/NBlasko/blaskontrol) ![npm](https://img.shields.io/npm/dt/blaskontrol) ![Known Vulnerabilities](https://snyk.io/test/github/NBlasko/blaskontrol/badge.svg)
 
 ## Introduction
 
