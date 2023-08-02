@@ -1,5 +1,7 @@
 # blaskontrol
 
+[![Coveralls](https://img.shields.io/coveralls/NBlasko/blaskontrol.svg?maxAge=1000)](https://coveralls.io/github/NBlasko/blaskontrol)
+
 ## Introduction
 
 In modern application development, software design principles that promote flexibility, maintainability, and testability are essential for building robust and scalable applications. One such powerful principle is "Dependency Injection" (DI), a design pattern that plays a crucial role in structuring code and managing dependencies.
@@ -132,6 +134,10 @@ foo.getFoo() // returns 'foo'
 ### Mock services
 
 Mocking services requires running the `snapshot` method before mocking a class and the `restore` after using the mocked version of a class instance.
+
+Method `snapshot` caches all dependencies and service factories. It sets the container in a "testable state session." After calling the method `snapshot`, we can mock dependencies.
+
+When we finish mocking and testing using provided mocks in the container, we can call a method `restore`. Method `restore` will clear all mocks and return the container to its original state (the state in which the container was before we triggered the `snapshot` method).
 
 Presume we want to mock the `Foo` class with `MockFoo`:
 

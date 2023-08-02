@@ -37,6 +37,16 @@ export class Container implements IContainer {
   }
 
   public snapshot(): void {
+    if (this.isChild) {
+      throw new Error(
+        "Not available to backup container data by calling the method 'snapshot' from the child container",
+      );
+    }
+
+    if (this.snapshotBackup.isInTestingState) {
+      throw new Error("Consecutive calls on method 'snapshot' are forbidden");
+    }
+
     this.snapshotBackup = {
       dependencies: this.dependencies,
       factories: this.factories,
@@ -52,10 +62,15 @@ export class Container implements IContainer {
     if (this.isChild) {
       throw new Error("Not available to restore to defaults by calling the method 'restore' from the child container");
     }
+
+    if (!this.snapshotBackup.isInTestingState) {
+      throw new Error("Consecutive calls on method 'restore' are forbidden");
+    }
+
     this.mockedDependencies.clear();
-    this.dependencies = this.snapshotBackup.dependencies ?? new Map<string, unknown>();
-    this.singletonInstances = this.snapshotBackup.singletonInstances ?? new Map<string, unknown>();
-    this.factories = this.snapshotBackup.factories ?? new Map<string, Factory<Container>>();
+    this.dependencies = this.snapshotBackup.dependencies;
+    this.singletonInstances = this.snapshotBackup.singletonInstances;
+    this.factories = this.snapshotBackup.factories;
     this.snapshotBackup = { dependencies: null, factories: null, singletonInstances: null, isInTestingState: false };
   }
 
@@ -145,7 +160,7 @@ export class Container implements IContainer {
     return metaData;
   }
 
-  private resolveFactory<T>(parentFactory: Factory<Container>, meta: ServiceMetadata) {
+  private resolveFactory<T>(parentFactory: Factory<Container>, meta: ServiceMetadata): T {
     const parentHandler = parentFactory.handler(this);
 
     if (meta.scope === 'singleton') {

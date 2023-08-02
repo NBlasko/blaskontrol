@@ -14,7 +14,7 @@
         "project": "./tsconfig.json"
       },
       "rules": {
-        "no-warning-comments": ["warn", { "terms": ["todo"], "location": "anywhere" }],
+        "no-warning-comments": ["error", { "terms": ["todo"], "location": "anywhere" }],
         "@typescript-eslint/no-unused-vars": [
           "error",
           {
@@ -23,15 +23,14 @@
             "argsIgnorePattern": "^_"
           }
         ],
-        "@typescript-eslint/interface-name-prefix": "off",
+        "@typescript-eslint/interface-name-prefix": 0,
         "@typescript-eslint/explicit-function-return-type": "off",
-        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-explicit-any": "error",
         "@typescript-eslint/explicit-module-boundary-types": "off",
         "@typescript-eslint/ban-types": "off",
-        "@typescript-eslint/no-var-requires": 0,
-        "@typescript-eslint/no-inferrable-types": "off",
-        "@typescript-eslint/ban-ts-comment": 0,
-        "@typescript-eslint/no-floating-promises": 1
+        "@typescript-eslint/no-inferrable-types": "error",
+        "@typescript-eslint/ban-ts-comment": "error",
+        "@typescript-eslint/no-floating-promises": "error"
       }
     }
   ]

@@ -105,18 +105,6 @@ describe('Mock', () => {
     expect(mockedTestRepository.getAll()).toEqual([5, 6, 7]);
   });
 
-  it('should throw an error if we call restore on the child container', () => {
-    const childContainer = container.createChild();
-    expect(() => childContainer.restore()).toThrow(
-      "Not available to restore to defaults by calling the method 'restore' from the child container",
-    );
-  });
-
-  it('should throw an error if we use mock before calling snapshot or after calling restore', () => {
-    container.restore();
-    expect(() => container.mock(TestRepository, {})).toThrow("Must execute method 'snapshot()' before using mock");
-  });
-
   it('should mock an instance from the parent container before registering it', () => {
     class Foo {
       public foo() {
@@ -146,5 +134,67 @@ describe('Mock', () => {
     childContainer.bindAsDynamic(Foo, () => new Foo(), { scope: 'transient' });
     const mockedFoo = container.get(Foo);
     expect(mockedFoo.foo()).toBe('Mocked Foo');
+  });
+});
+
+describe('Snapshot and Restore', () => {
+  class Foo {
+    public foo() {
+      return 'Foo';
+    }
+  }
+
+  class MockedFoo implements Foo {
+    public foo() {
+      return 'Mocked Foo';
+    }
+  }
+
+  let container: Container;
+
+  beforeEach(() => {
+    container = new Container();
+    container.bindAsDynamic(Foo, () => new Foo());
+  });
+
+  it('should throw an error if we use mock before calling snapshot or after calling restore', () => {
+    expect(() => container.mock(Foo, {})).toThrow("Must execute method 'snapshot()' before using mock");
+  });
+
+  it('should throw an error if we call restore on the child container', () => {
+    const childContainer = container.createChild();
+    expect(() => childContainer.restore()).toThrow(
+      "Not available to restore to defaults by calling the method 'restore' from the child container",
+    );
+  });
+
+  it('should throw an error if we call snapshot on the child container', () => {
+    const childContainer = container.createChild();
+    expect(() => childContainer.snapshot()).toThrow(
+      "Not available to backup container data by calling the method 'snapshot' from the child container",
+    );
+  });
+
+  it('should throw an error if we consecutively call the method snapshot', () => {
+    container.snapshot();
+    expect(() => container.snapshot()).toThrow("Consecutive calls on method 'snapshot' are forbidden");
+  });
+
+  it('should throw an error if we consecutively call the method restore', () => {
+    container.snapshot();
+    container.restore();
+    expect(() => container.restore()).toThrow("Consecutive calls on method 'restore' are forbidden");
+  });
+
+  it('should snapshot, mock and restore in happy flow', () => {
+    container.snapshot();
+
+    container.mock(Foo, new MockedFoo());
+    const mockedFoo = container.get(Foo);
+    expect(mockedFoo.foo()).toBe('Mocked Foo');
+
+    container.restore();
+    const foo = container.get(Foo);
+    expect(foo.foo()).toBe('Foo');
   });
 });
