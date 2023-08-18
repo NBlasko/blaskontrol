@@ -198,3 +198,50 @@ describe('Snapshot and Restore', () => {
     expect(foo.foo()).toBe('Foo');
   });
 });
+
+describe('Clear mocks', () => {
+  class Foo {
+    public foo() {
+      return 'Foo';
+    }
+  }
+
+  class MockedFoo implements Foo {
+    public foo() {
+      return 'Mocked Foo';
+    }
+  }
+
+  let container: Container;
+
+  beforeEach(() => {
+    container = new Container();
+    container.bindAsDynamic(Foo, () => new Foo());
+  });
+
+  it(`should throw an error if we call 'clearMocks' before calling snapshot or after calling restore`, () => {
+    expect(() => container.clearMocks()).toThrow(
+      "Not available to call method 'clearMocks' before calling 'snapshot' or after calling 'restore'",
+    );
+  });
+
+  it("should throw an error if we call 'clearMocks' on the child container", () => {
+    const childContainer = container.createChild();
+    expect(() => childContainer.clearMocks()).toThrow(
+      "Not available to restore to defaults by calling the method 'clearMocks' from the child container",
+    );
+  });
+
+  it('should clear mocks', () => {
+    container.snapshot();
+
+    container.mock(Foo, new MockedFoo());
+    const mockedFoo = container.get(Foo);
+    expect(mockedFoo.foo()).toBe('Mocked Foo');
+    container.clearMocks();
+    const foo = container.get(Foo);
+    expect(foo.foo()).toBe('Foo');
+
+    container.restore();
+  });
+});
