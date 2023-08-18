@@ -74,6 +74,23 @@ export class Container implements IContainer {
     this.snapshotBackup = { dependencies: null, factories: null, singletonInstances: null, isInTestingState: false };
   }
 
+  public clearMocks(): void {
+    if (this.isChild) {
+      throw new Error(
+        "Not available to restore to defaults by calling the method 'clearMocks' from the child container",
+      );
+    }
+
+    if (!this.snapshotBackup.isInTestingState) {
+      throw new Error("Not available to call method 'clearMocks' before calling 'snapshot' or after calling 'restore'");
+    }
+
+    this.mockedDependencies.clear();
+    this.dependencies = new Map<string, unknown>();
+    this.factories = new Map<string, Factory<Container>>(this.factories);
+    this.singletonInstances = new Map<string, unknown>(this.singletonInstances);
+  }
+
   public createChild(): Container {
     const di = new Container();
     di.metaIoC = this.metaIoC;

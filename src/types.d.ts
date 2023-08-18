@@ -167,6 +167,13 @@ export declare class IContainer {
   public restore(): void;
 
   /**
+   *  Clear all mocks.
+   *  A good place to run it is in the test framework lifecycle 'beforeEach' or 'afterEach'.
+   *  We can achieve a similar result by calling restore and then snapshot.
+   */
+  public clearMocks(): void;
+
+  /**
    * Create a child container. Child Containers are containers that should live during the request.
    * They can be handy if, during the request lifetime,
    * we need to register additional services that should not exist in the parent container

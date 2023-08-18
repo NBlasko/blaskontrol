@@ -139,6 +139,8 @@ Method `snapshot` caches all dependencies and service factories. It sets the con
 
 When we finish mocking and testing using provided mocks in the container, we can call a method `restore`. Method `restore` will clear all mocks and return the container to its original state (the state in which the container was before we triggered the `snapshot` method).
 
+When manually clearing mocks using consecutive calls to `restore` and `snapshot`, it's crucial to maintain a specific order: `snapshot -> restore -> snapshot -> restore`. To simplify the process of clearing mocks and ensure proper order, we provide the `clearMocks` method. This method serves as a convenient tool for test runners to execute between snapshot and restore methods as many times as needed. It eliminates the risk of accidental misordering and makes test maintenance easier.
+
 Presume we want to mock the `Foo` class with `MockFoo`:
 
 ```typeScript
@@ -153,7 +155,12 @@ container.snapshot(); // A good place to run it is in the test framework lifecyc
 
 container.mock(Foo, new MockFoo());
 const foo = container.get(Foo);
-foo.getFoo() // returns 'mockedFoo'
+foo.getFoo(); // Returns 'mockedFoo'
+
+container.clearMocks(); // A good place to run it is in the test framework lifecycle 'beforeEach' or 'afterEach'.
+const foo = container.get(Foo);
+foo.getFoo(); // The container returns the method's original value. It returns foo.
+
 
 container.restore(); // A good place to run it is in the test framework lifecycle 'after', 'afterAll', or 'afterEach'.
 ```
